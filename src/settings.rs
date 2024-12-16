@@ -51,6 +51,8 @@ pub(crate) struct Settings {
     pub(crate) reconnect_tries: Option<u64>,
     /// The delay between two reconnect tries to the Wayland server.
     pub(crate) reconnect_delay: Duration,
+    /// Daemonize or not
+    pub(crate) daemonized: bool,
 }
 
 /// Get the settings for the program.
@@ -121,6 +123,13 @@ pub(crate) fn get_settings() -> Settings {
             .required(false)
             .action(ArgAction::SetTrue),
         )
+        .arg(
+            arg!(
+                -d --"daemonize" "Daemonize current process"
+            )
+            .required(false)
+            .action(ArgAction::SetTrue),
+        )
         .get_matches();
 
     // Initialize the logger here, because log is used to inform about invalid settings
@@ -146,6 +155,7 @@ pub(crate) fn get_settings() -> Settings {
         });
     let reconnect_tries = matches.get_one::<u64>("reconnect-tries").copied();
     let reconnect_delay = Duration::from_millis(*matches.get_one::<u64>("reconnect-delay").unwrap());
+    let daemonized = matches.get_flag("daemonize");
 
     Settings {
         clipboard_type,
@@ -155,5 +165,6 @@ pub(crate) fn get_settings() -> Settings {
         all_mime_type_regex,
         reconnect_tries,
         reconnect_delay,
+        daemonized,
     }
 }

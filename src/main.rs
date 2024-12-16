@@ -5,15 +5,13 @@ mod states;
 mod wayland;
 
 use std::time::Duration;
+use fork::{daemon, Fork};
 
 use crate::logger::log_default_target;
-use crate::settings::get_settings;
+use crate::settings::{get_settings, Settings};
 use crate::states::WaylandError;
 
-// One worker thread for writing the clipboard data
-#[tokio::main(flavor = "multi_thread", worker_threads = 1)]
-async fn main() {
-    let settings = get_settings();
+async fn run(settings: Settings) {
     let mut is_reconnect = false;
     let mut connection_tries = 0;
 
@@ -118,5 +116,24 @@ async fn main() {
                 }
             }
         }
+    }
+}
+
+// One worker thread for writing the clipboard data
+#[tokio::main(flavor = "multi_thread", worker_threads = 1)]
+async fn main() {
+    let settings = get_settings();
+
+    if settings.daemonized {
+        if let Ok(Fork::Child) = daemon(false, false) {
+            run(settings).await;
+        }
+        else {
+            log::error!(target: log_default_target(),
+                "daemonized failure...");
+        }
+    }
+    else {
+        run(settings).await;
     }
 }
